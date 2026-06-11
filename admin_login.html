@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rendición de Gastos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:#F0F4F8;color:#1A2332;min-height:100vh}
+.topbar{background:#1F4E79;color:#fff;padding:14px 32px;display:flex;align-items:center;justify-content:space-between}
+.topbar .logo{font-size:16px;font-weight:600;letter-spacing:.3px}
+.topbar .worker-tag{font-size:13px;opacity:.85;display:flex;align-items:center;gap:8px}
+.topbar .worker-tag span{background:rgba(255,255,255,.18);padding:3px 10px;border-radius:20px}
+.main{max-width:980px;margin:0 auto;padding:32px 20px}
+
+/* Login */
+#login-screen{display:flex;align-items:center;justify-content:center;min-height:calc(100vh - 52px)}
+.login-card{background:#fff;border-radius:16px;padding:40px 36px;width:100%;max-width:400px;box-shadow:0 4px 24px rgba(0,0,0,.07)}
+.login-card h1{font-size:22px;font-weight:600;color:#1F4E79;margin-bottom:6px}
+.login-card p{font-size:14px;color:#6B7A8D;margin-bottom:28px}
+.login-card label{font-size:13px;font-weight:500;color:#3D4F63;display:block;margin-bottom:6px}
+.login-card input{width:100%;border:1.5px solid #D1DBE8;border-radius:10px;padding:11px 14px;font-size:14px;font-family:inherit;outline:none;transition:border .2s}
+.login-card input:focus{border-color:#1F4E79}
+.btn-primary{width:100%;background:#1F4E79;color:#fff;border:none;border-radius:10px;padding:12px;font-size:15px;font-weight:500;cursor:pointer;margin-top:18px;transition:background .2s}
+.btn-primary:hover{background:#163D61}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed}
+
+/* App */
+#app-screen{display:none}
+.section-title{font-size:18px;font-weight:600;color:#1F4E79;margin-bottom:16px}
+
+/* Stats */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:28px}
+.stat-box{background:#fff;border-radius:12px;padding:18px 20px;border:1px solid #E2EAF3}
+.stat-box .lbl{font-size:12px;color:#6B7A8D;font-weight:500;margin-bottom:4px}
+.stat-box .val{font-size:24px;font-weight:600;color:#1F4E79}
+
+/* Upload zone */
+.upload-area{background:#fff;border:2px dashed #C5D5E8;border-radius:14px;padding:36px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:24px}
+.upload-area:hover,.upload-area.drag{border-color:#1F4E79;background:#F0F7FF}
+.upload-area svg{margin-bottom:10px;color:#8BA5C2}
+.upload-area h3{font-size:15px;font-weight:500;margin-bottom:4px}
+.upload-area p{font-size:13px;color:#8BA5C2}
+#file-input{display:none}
+
+/* Invoice cards */
+.invoices-wrap{margin-bottom:24px}
+.inv-card{background:#fff;border-radius:12px;border:1px solid #E2EAF3;padding:18px 20px;margin-bottom:12px;position:relative}
+.inv-card .inv-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.inv-card .inv-num{font-size:14px;font-weight:600;color:#1F4E79;display:flex;align-items:center;gap:8px}
+.inv-card .inv-file{font-size:12px;color:#8BA5C2;font-weight:400}
+.badge{font-size:11px;padding:3px 9px;border-radius:20px;font-weight:500}
+.badge-ok{background:#E3F5EC;color:#1A7A45}
+.badge-proc{background:#FEF3DC;color:#8A5A00}
+.badge-err{background:#FDEAEA;color:#9B1C1C}
+.inv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px}
+.inv-field{background:#F5F8FC;border-radius:8px;padding:9px 11px}
+.inv-field .k{font-size:11px;color:#8BA5C2;margin-bottom:2px}
+.inv-field .v{font-size:13px;font-weight:500;color:#1A2332;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.inv-field .v.editable{cursor:pointer;border-bottom:1px dashed transparent;transition:border .15s}
+.inv-field .v.editable:hover{border-bottom-color:#1F4E79}
+.inv-field input{background:transparent;border:none;border-bottom:1.5px solid #1F4E79;width:100%;font-size:13px;font-weight:500;font-family:inherit;outline:none;color:#1A2332;padding:1px 0}
+.inv-actions{display:flex;gap:8px;margin-top:12px}
+.btn-sm{font-size:12px;padding:5px 12px;border-radius:8px;border:1px solid #D1DBE8;background:transparent;cursor:pointer;color:#3D4F63;display:flex;align-items:center;gap:4px;transition:background .15s}
+.btn-sm:hover{background:#F0F4F8}
+.btn-sm.del{color:#C0392B;border-color:#FCCFCF}
+.btn-sm.del:hover{background:#FFF0F0}
+.progress-bar{height:4px;background:#E2EAF3;border-radius:2px;margin-top:10px;overflow:hidden}
+.progress-fill{height:100%;background:#1F4E79;border-radius:2px;animation:prog 2s ease-in-out infinite alternate}
+@keyframes prog{from{width:20%}to{width:85%}}
+
+/* Export */
+.export-bar{background:#fff;border-radius:12px;padding:18px 20px;border:1px solid #E2EAF3;display:flex;align-items:center;justify-content:space-between}
+.export-bar p{font-size:14px;color:#3D4F63}
+.btn-export{background:#1F4E79;color:#fff;border:none;border-radius:10px;padding:10px 20px;font-size:14px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:8px;transition:background .2s}
+.btn-export:hover{background:#163D61}
+.btn-export:disabled{opacity:.45;cursor:not-allowed}
+.empty{text-align:center;padding:40px;color:#8BA5C2;font-size:14px}
+.empty svg{margin-bottom:10px;display:block;margin-left:auto;margin-right:auto}
+
+.toast{position:fixed;bottom:28px;right:28px;background:#1A2332;color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;opacity:0;transform:translateY(10px);transition:all .3s;z-index:999;max-width:320px}
+.toast.show{opacity:1;transform:translateY(0)}
+.toast.success{background:#1A7A45}
+.toast.error{background:#9B1C1C}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">📋 Rendición de Gastos</div>
+  <div class="worker-tag" id="worker-tag" style="display:none">
+    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+    <span id="worker-name-tag">—</span>
+  </div>
+</div>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <h1>Bienvenido</h1>
+    <p>Ingresa tu nombre para registrar tus facturas</p>
+    <label for="name-input">Tu nombre completo</label>
+    <input type="text" id="name-input" placeholder="Ej: Juan Pérez" autocomplete="off">
+    <button class="btn-primary" id="btn-enter" onclick="enterApp()">Ingresar</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app-screen">
+  <div class="main">
+    <div class="stats">
+      <div class="stat-box"><div class="lbl">Facturas cargadas</div><div class="val" id="s-count">0</div></div>
+      <div class="stat-box"><div class="lbl">Total IGV</div><div class="val" id="s-igv">S/ 0.00</div></div>
+      <div class="stat-box"><div class="lbl">Total general</div><div class="val" id="s-total">S/ 0.00</div></div>
+    </div>
+
+    <div class="upload-area" id="drop-zone" onclick="document.getElementById('file-input').click()">
+      <svg width="40" height="40" fill="none" stroke="#8BA5C2" stroke-width="1.5" viewBox="0 0 24 24">
+        <path d="M12 16V4m0-4 4 4m-4-4L8 4"/><rect x="2" y="14" width="20" height="8" rx="2"/>
+      </svg>
+      <h3>Subir facturas</h3>
+      <p>PDF, JPG o PNG — arrastra o haz clic</p>
+    </div>
+    <input type="file" id="file-input" multiple accept=".pdf,.jpg,.jpeg,.png">
+
+    <div class="invoices-wrap" id="invoices-wrap">
+      <div class="empty" id="empty-msg">
+        <svg width="48" height="48" fill="none" stroke="#C5D5E8" stroke-width="1.5" viewBox="0 0 24 24">
+          <path d="M9 12h6m-6 4h6m2 4H7a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h5l5 5v11a2 2 0 0 1-2 2z"/>
+        </svg>
+        Aún no hay facturas. ¡Sube la primera!
+      </div>
+    </div>
+
+    <div class="export-bar">
+      <p>Descarga tu rendición completa en Excel</p>
+      <button class="btn-export" id="btn-export" onclick="exportExcel()" disabled>
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 16V4M4 20h16"/><path d="m8 12 4 4 4-4"/></svg>
+        Descargar Excel
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let workerId = null, workerName = null;
+const invoices = [];
+
+document.getElementById('name-input').addEventListener('keydown', e => { if(e.key==='Enter') enterApp(); });
+
+async function enterApp() {
+  const name = document.getElementById('name-input').value.trim();
+  if (!name) return;
+  const btn = document.getElementById('btn-enter');
+  btn.disabled = true; btn.textContent = 'Cargando...';
+  try {
+    const r = await fetch('/api/register', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({name}) });
+    const d = await r.json();
+    if (d.error) { showToast(d.error, 'error'); btn.disabled=false; btn.textContent='Ingresar'; return; }
+    workerId = d.worker_id; workerName = d.name;
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app-screen').style.display = 'block';
+    document.getElementById('worker-tag').style.display = 'flex';
+    document.getElementById('worker-name-tag').textContent = workerName;
+    if (d.existing) {
+      await loadExistingInvoices();
+      showToast(`Bienvenido de nuevo, ${workerName}`, 'success');
+    } else {
+      showToast(`¡Hola, ${workerName}! Tu sesión fue creada`, 'success');
+    }
+  } catch(e) { showToast('Error de conexión', 'error'); btn.disabled=false; btn.textContent='Ingresar'; }
+}
+
+async function loadExistingInvoices() {
+  const r = await fetch(`/api/invoices/${workerId}`);
+  const data = await r.json();
+  data.forEach(inv => { if (!invoices.find(i=>i._id===inv._id)) { inv._status='done'; invoices.push(inv); } });
+  renderAll();
+}
+
+// Upload
+const dz = document.getElementById('drop-zone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('drag'));
+dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('drag'); handleFiles(e.dataTransfer.files); });
+document.getElementById('file-input').addEventListener('change', e => handleFiles(e.target.files));
+
+function handleFiles(files) {
+  Array.from(files).forEach(f => uploadFile(f));
+}
+
+async function uploadFile(file) {
+  const tempId = 'tmp_' + Date.now();
+  const placeholder = { _id: tempId, _status: 'processing', archivo: file.name };
+  invoices.push(placeholder);
+  renderAll();
+  const fd = new FormData();
+  fd.append('file', file);
+  fd.append('worker_id', workerId);
+  try {
+    const r = await fetch('/api/upload', { method:'POST', body: fd });
+    const d = await r.json();
+    const idx = invoices.findIndex(i=>i._id===tempId);
+    if (d.ok) {
+      invoices[idx] = { ...d.invoice, _status:'done' };
+      showToast(`Factura ${d.invoice.numero_factura||file.name} extraída`, 'success');
+    } else {
+      invoices[idx] = { ...placeholder, _status:'error', _error: d.error };
+      showToast(d.error||'Error al procesar', 'error');
+    }
+  } catch(e) {
+    const idx = invoices.findIndex(i=>i._id===tempId);
+    if (idx>-1) invoices[idx] = { ...placeholder, _status:'error', _error:'Error de red' };
+    showToast('Error de conexión', 'error');
+  }
+  renderAll();
+}
+
+const FIELDS = [
+  ['numero_factura','N° Factura'],['fecha_emision','Fecha Emisión'],['fecha_vencimiento','Fecha Venc.'],
+  ['proveedor','Proveedor'],['ruc_proveedor','RUC Prov.'],['cliente','Cliente'],
+  ['ruc_cliente','RUC Cliente'],['descripcion','Descripción'],
+  ['base_gravada','Base Gravada'],['igv','IGV'],['total','Total'],['moneda','Moneda'],['forma_pago','Forma Pago']
+];
+
+function renderAll() {
+  const wrap = document.getElementById('invoices-wrap');
+  const done = invoices.filter(i=>i._status==='done');
+  document.getElementById('empty-msg') && (document.getElementById('empty-msg').style.display = invoices.length ? 'none' : 'block');
+  // stats
+  document.getElementById('s-count').textContent = done.length;
+  const igvSum = done.reduce((a,i) => a+(parseFloat(i.igv)||0), 0);
+  const totSum = done.reduce((a,i) => a+(parseFloat(i.total)||0), 0);
+  document.getElementById('s-igv').textContent = 'S/ '+igvSum.toFixed(2);
+  document.getElementById('s-total').textContent = 'S/ '+totSum.toFixed(2);
+  document.getElementById('btn-export').disabled = done.length === 0;
+
+  // remove old cards
+  wrap.querySelectorAll('.inv-card').forEach(c=>c.remove());
+
+  invoices.forEach(inv => {
+    const card = document.createElement('div');
+    card.className = 'inv-card';
+    card.id = 'card-'+inv._id;
+    if (inv._status === 'processing') {
+      card.innerHTML = `
+        <div class="inv-header">
+          <div class="inv-num">📄 <span class="inv-file">${inv.archivo}</span></div>
+          <span class="badge badge-proc">⏳ Procesando con IA…</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill"></div></div>`;
+    } else if (inv._status === 'error') {
+      card.innerHTML = `
+        <div class="inv-header">
+          <div class="inv-num">📄 <span class="inv-file">${inv.archivo}</span></div>
+          <span class="badge badge-err">⚠ Error</span>
+        </div>
+        <p style="font-size:13px;color:#9B1C1C;margin-top:6px">${inv._error||'No se pudo procesar'}</p>
+        <div class="inv-actions"><button class="btn-sm del" onclick="deleteInv('${inv._id}')">🗑 Eliminar</button></div>`;
+    } else {
+      const fieldsHtml = FIELDS.map(([k,label]) =>
+        `<div class="inv-field">
+          <div class="k">${label}</div>
+          <div class="v editable" id="v-${inv._id}-${k}" ondblclick="editField('${inv._id}','${k}')">${inv[k]||'—'}</div>
+        </div>`).join('');
+      card.innerHTML = `
+        <div class="inv-header">
+          <div class="inv-num">✅ ${inv.numero_factura||'Sin número'} <span class="inv-file">${inv.archivo}</span></div>
+          <span class="badge badge-ok">Datos extraídos</span>
+        </div>
+        <div class="inv-grid">${fieldsHtml}</div>
+        <div class="inv-actions">
+          <button class="btn-sm del" onclick="deleteInv('${inv._id}')">🗑 Eliminar</button>
+        </div>`;
+    }
+    wrap.appendChild(card);
+  });
+  if (!invoices.length) {
+    let e = document.getElementById('empty-msg');
+    if (!e) { e = document.createElement('div'); e.id='empty-msg'; e.className='empty'; e.innerHTML='<svg width="48" height="48" fill="none" stroke="#C5D5E8" stroke-width="1.5" viewBox="0 0 24 24"><path d="M9 12h6m-6 4h6m2 4H7a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h5l5 5v11a2 2 0 0 1-2 2z"/></svg>Aún no hay facturas. ¡Sube la primera!'; wrap.appendChild(e); }
+    e.style.display='block';
+  }
+}
+
+function editField(invId, key) {
+  const el = document.getElementById(`v-${invId}-${key}`);
+  const inv = invoices.find(i=>i._id===invId);
+  const cur = inv[key]||'';
+  el.innerHTML = `<input value="${cur}" onblur="saveField('${invId}','${key}',this.value)" onkeydown="if(event.key==='Enter')this.blur()">`;
+  el.querySelector('input').focus();
+}
+
+async function saveField(invId, key, val) {
+  const inv = invoices.find(i=>i._id===invId);
+  if (inv) inv[key] = val;
+  const el = document.getElementById(`v-${invId}-${key}`);
+  if (el) el.innerHTML = val||'—';
+  renderAll();
+  await fetch('/api/update_invoice', { method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ worker_id: workerId, inv_id: invId, field: key, value: val }) });
+}
+
+async function deleteInv(invId) {
+  if (!confirm('¿Eliminar esta factura?')) return;
+  const idx = invoices.findIndex(i=>i._id===invId);
+  if (idx>-1) invoices.splice(idx,1);
+  renderAll();
+  await fetch('/api/delete_invoice', { method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ worker_id: workerId, inv_id: invId }) });
+}
+
+function exportExcel() {
+  window.location.href = `/api/export/${workerId}`;
+}
+
+function showToast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast show ' + type;
+  setTimeout(() => t.className='toast', 3500);
+}
+</script>
+</body>
+</html>

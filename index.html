@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Admin — Rendiciones</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:#F0F4F8;color:#1A2332;min-height:100vh}
+.topbar{background:#1F4E79;color:#fff;padding:14px 32px;display:flex;align-items:center;justify-content:space-between}
+.topbar .logo{font-size:16px;font-weight:600}
+.topbar .badge{font-size:12px;background:rgba(255,255,255,.18);padding:3px 10px;border-radius:20px}
+.main{max-width:1100px;margin:0 auto;padding:32px 20px}
+h2{font-size:20px;font-weight:600;color:#1F4E79;margin-bottom:20px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:32px}
+.stat-box{background:#fff;border-radius:12px;padding:18px 20px;border:1px solid #E2EAF3}
+.stat-box .lbl{font-size:12px;color:#6B7A8D;font-weight:500;margin-bottom:4px}
+.stat-box .val{font-size:26px;font-weight:600;color:#1F4E79}
+.toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.btn-export{background:#1F4E79;color:#fff;border:none;border-radius:10px;padding:10px 20px;font-size:14px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:8px}
+.btn-export:hover{background:#163D61}
+table{width:100%;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden;border:1px solid #E2EAF3}
+thead tr{background:#1F4E79}
+thead th{color:#fff;font-size:13px;font-weight:500;padding:13px 16px;text-align:left}
+tbody tr{border-bottom:1px solid #EEF3F9;transition:background .15s}
+tbody tr:hover{background:#F5F8FC}
+tbody tr:last-child{border-bottom:none}
+tbody td{padding:13px 16px;font-size:14px;color:#1A2332}
+.count-pill{display:inline-block;background:#EBF5FB;color:#1F4E79;font-weight:600;font-size:12px;padding:3px 10px;border-radius:20px}
+.total-amount{font-weight:600;color:#1A7A45}
+.btn-dl{background:transparent;border:1px solid #D1DBE8;border-radius:8px;padding:5px 12px;font-size:12px;cursor:pointer;color:#3D4F63;transition:background .15s}
+.btn-dl:hover{background:#F0F4F8}
+.empty{text-align:center;padding:60px;color:#8BA5C2;font-size:15px}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="logo">📊 Panel de Administración — Rendiciones</div>
+  <span class="badge">Admin</span>
+</div>
+<div class="main">
+  <div class="stats">
+    <div class="stat-box">
+      <div class="lbl">Trabajadores</div>
+      <div class="val" id="s-workers">{{ workers|length }}</div>
+    </div>
+    <div class="stat-box">
+      <div class="lbl">Total facturas</div>
+      <div class="val" id="s-invoices">{{ workers|sum(attribute='count') }}</div>
+    </div>
+    <div class="stat-box">
+      <div class="lbl">Monto total rendido</div>
+      <div class="val" id="s-total">S/ {{ "%.2f"|format(workers|sum(attribute='total')) }}</div>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <h2>Rendiciones por trabajador</h2>
+    <button class="btn-export" onclick="exportAll()">
+      ⬇ Descargar Excel completo
+    </button>
+  </div>
+
+  {% if workers %}
+  <table>
+    <thead>
+      <tr>
+        <th>Trabajador</th>
+        <th>ID</th>
+        <th>Facturas</th>
+        <th>Total rendido</th>
+        <th>Acción</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for w in workers %}
+      <tr>
+        <td><strong>{{ w.name }}</strong></td>
+        <td style="color:#8BA5C2;font-size:12px;font-family:monospace">{{ w.id }}</td>
+        <td><span class="count-pill">{{ w.count }} factura{% if w.count != 1 %}s{% endif %}</span></td>
+        <td class="total-amount">S/ {{ "%.2f"|format(w.total) }}</td>
+        <td>
+          {% if w.count > 0 %}
+          <button class="btn-dl" onclick="downloadWorker('{{ w.id }}')">⬇ Excel</button>
+          {% else %}
+          <span style="font-size:12px;color:#C5D5E8">Sin facturas</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty">Aún no hay trabajadores registrados</div>
+  {% endif %}
+</div>
+
+<script>
+function exportAll() { window.location.href = '/api/admin/export_all'; }
+function downloadWorker(wid) { window.location.href = `/api/export/${wid}`; }
+
+// Auto-refresh stats every 30s
+setInterval(async () => {
+  const r = await fetch('/api/admin/workers');
+  const data = await r.json();
+  if (data.error) return;
+  document.getElementById('s-workers').textContent = data.length;
+  const totalInv = data.reduce((a,w)=>a+w.count,0);
+  const totalAmt = data.reduce((a,w)=>a+w.total,0);
+  document.getElementById('s-invoices').textContent = totalInv;
+  document.getElementById('s-total').textContent = 'S/ '+totalAmt.toFixed(2);
+}, 30000);
+</script>
+</body>
+</html>
