@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login Administrador</title>
+</head>
+<body>
+    <h2>Ingreso Administrador</h2>
+
+    {% if error %}
+        <p style="color:red">{{ error }}</p>
+    {% endif %}
+
+    <form method="POST">
+        <label>Contraseña:</label>
+        <input type="password" name="password">
+        <button type="submit">Ingresar</button>
+    </form>
+</body>
+</html>
