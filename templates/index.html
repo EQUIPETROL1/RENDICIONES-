@@ -1,1 +1,42 @@
-templates/index.html
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Rendición de Gastos</title>
+</head>
+<body>
+
+<h1>Rendición de Gastos</h1>
+
+<form id="registro">
+    <label>Nombre del trabajador:</label><br>
+    <input type="text" id="nombre" required>
+    <button type="button" onclick="registrar()">Ingresar</button>
+</form>
+
+<br>
+
+<div id="resultado"></div>
+
+<script>
+async function registrar() {
+    const nombre = document.getElementById("nombre").value;
+
+    const respuesta = await fetch("/api/register", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            name: nombre
+        })
+    });
+
+    const data = await respuesta.json();
+
+    document.getElementById("resultado").innerHTML =
+        "Bienvenido: " + data.name;
+}
+</script>
+
+</body>
+</html>
