@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Panel Administrador</title>
+</head>
+<body>
+
+<h1>Panel de Rendiciones</h1>
+
+<table border="1">
+    <tr>
+        <th>Trabajador</th>
+        <th>Cantidad Facturas</th>
+        <th>Total</th>
+    </tr>
+
+    {% for worker in workers %}
+    <tr>
+        <td>{{ worker.name }}</td>
+        <td>{{ worker.count }}</td>
+        <td>{{ worker.total }}</td>
+    </tr>
+    {% endfor %}
+
+</table>
+
+<br>
+
+<a href="/api/admin/export_all">
+    Descargar Excel Consolidado
+</a>
+
+</body>
+</html>
